@@ -17,7 +17,7 @@ class MainScreen extends StatelessWidget {
 
     return Scaffold(
       body: Obx(() => AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
+            duration: const Duration(milliseconds: 300),
             transitionBuilder: (Widget child, Animation<double> animation) {
               return SlideTransition(
                 position: Tween<Offset>(

@@ -11,6 +11,11 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFFBBF24);
   static const Color secondaryDark = Color(0xFFD97706);
 
+  // Tertiary Colors - 더 부드럽고 현대적인 블루
+  static const Color tertiary = Color(0xFF3B82F6);
+  static const Color tertiaryLight = Color(0xFF60A5FA);
+  static const Color tertiaryDark = Color(0xFF1D4ED8);
+
   // Background Colors - 더 부드러운 그레이
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);

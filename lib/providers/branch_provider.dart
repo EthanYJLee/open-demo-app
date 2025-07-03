@@ -3,62 +3,113 @@ import '../models/branch.dart';
 import '../models/space.dart';
 import '../models/reservation.dart';
 import '../models/community.dart';
-import '../utils/fake_data.dart';
+import '../services/repositories/repository_providers.dart';
 
 // 모든 지점 목록
-final branchesProvider = Provider<List<Branch>>((ref) {
-  return FakeData.branches;
+final branchesProvider = FutureProvider<List<Branch>>((ref) async {
+  try {
+    final repository = ref.read(branchRepositoryProvider);
+    return await repository.getAll();
+  } catch (e) {
+    return [];
+  }
 });
 
 // 활성화된 지점 목록
-final activeBranchesProvider = Provider<List<Branch>>((ref) {
-  final branches = ref.watch(branchesProvider);
-  return branches.where((branch) => branch.isActive).toList();
+final activeBranchesProvider = FutureProvider<List<Branch>>((ref) async {
+  try {
+    final repository = ref.read(branchRepositoryProvider);
+    return await repository.getActiveBranches();
+  } catch (e) {
+    return [];
+  }
+});
+
+// 시/구별 지점 목록 (DB에서 필터링)
+final branchesByCityDistrictProvider =
+    FutureProvider.family<List<Branch>, ({String city, String district})>(
+        (ref, params) async {
+  try {
+    final repository = ref.read(branchRepositoryProvider);
+    final city = params.city;
+    final district = params.district;
+
+    // 빈 값이면 빈 리스트 반환
+    if (city.isEmpty || district.isEmpty) {
+      return [];
+    }
+
+    return await repository.getByCityAndDistrict(city, district);
+  } catch (e) {
+    return [];
+  }
 });
 
 // 선택된 지점
 final selectedBranchProvider = StateProvider<Branch?>((ref) {
-  final branches = ref.watch(activeBranchesProvider);
-  return branches.isNotEmpty ? branches.first : null;
+  final branchesAsync = ref.watch(activeBranchesProvider);
+  return branchesAsync.when(
+    data: (branches) => branches.isNotEmpty ? branches.first : null,
+    loading: () => null,
+    error: (_, __) => null,
+  );
 });
 
 // 지점별 공간 목록
 final branchSpacesProvider =
-    Provider.family<List<Space>, String>((ref, branchId) {
-  final spaces = ref.watch(spacesProvider);
-  return spaces.where((space) => space.branchId == branchId).toList();
+    FutureProvider.family<List<Space>, String>((ref, branchId) async {
+  final repository = ref.read(spaceRepositoryProvider);
+  return await repository.getByBranchId(branchId);
 });
 
 // 공간 목록 프로바이더
-final spacesProvider = Provider<List<Space>>((ref) {
-  return FakeData.spaces;
+final spacesProvider = FutureProvider<List<Space>>((ref) async {
+  try {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getAll();
+  } catch (e) {
+    return [];
+  }
+});
+
+// 예약 목록 프로바이더
+final reservationsProvider = FutureProvider<List<Reservation>>((ref) async {
+  try {
+    final repository = ref.read(reservationRepositoryProvider);
+    return await repository.getAll();
+  } catch (e) {
+    return [];
+  }
 });
 
 // 지점별 예약 목록
 final branchReservationsProvider =
-    Provider.family<List<Reservation>, String>((ref, branchId) {
-  final reservations = ref.watch(reservationsProvider);
-  return reservations
-      .where((reservation) => reservation.branchId == branchId)
-      .toList();
+    FutureProvider.family<List<Reservation>, String>((ref, branchId) async {
+  final repository = ref.read(reservationRepositoryProvider);
+  return await repository.getByBranchId(branchId);
 });
 
-// 예약 목록 프로바이더
-final reservationsProvider = Provider<List<Reservation>>((ref) {
-  return FakeData.reservations;
+// 커뮤니티 게시글 프로바이더
+final postsProvider = FutureProvider<List<Post>>((ref) async {
+  try {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getAll();
+  } catch (e) {
+    return [];
+  }
 });
 
 // 지점별 커뮤니티 게시글
 final branchPostsProvider =
-    Provider.family<List<Post>, String?>((ref, branchId) {
-  final posts = ref.watch(postsProvider);
-  if (branchId == null) {
-    return posts.where((post) => post.branchId == null).toList();
-  }
-  return posts.where((post) => post.branchId == branchId).toList();
+    FutureProvider.family<List<Post>, String?>((ref, branchId) async {
+  final repository = ref.read(postRepositoryProvider);
+  return await repository.getByBranchId(branchId);
 });
 
-// 커뮤니티 게시글 프로바이더
-final postsProvider = Provider<List<Post>>((ref) {
-  return FakeData.posts;
-});
+class PostsNotifier extends AsyncNotifier<List<Post>> {
+  @override
+  Future<List<Post>> build() async {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getAll();
+  }
+}

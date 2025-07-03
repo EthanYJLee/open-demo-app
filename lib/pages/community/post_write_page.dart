@@ -4,7 +4,7 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/community_provider.dart';
 import '../../models/community.dart';
-import '../../utils/fake_data.dart';
+import '../../providers/profile_provider.dart';
 import 'package:get/get.dart';
 
 class PostWritePage extends ConsumerStatefulWidget {
@@ -328,17 +328,20 @@ class _PostWritePageState extends ConsumerState<PostWritePage> {
     );
   }
 
-  void _submitPost() {
+  void _submitPost() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    final profile = await ref.read(currentProfileProvider.future);
+    if (profile == null) return; // 로그인된 사용자 없으면 게시글 작성 불가
+
     final newPost = Post(
-      id: FakeData.generateId(),
+      id: '${DateTime.now().millisecondsSinceEpoch}', // 임시 ID, Supabase에서 자동 생성될 것임
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
-      authorId: FakeData.currentUser.id,
-      authorName: FakeData.currentUser.name,
+      authorId: profile.id,
+      authorName: profile.name,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       viewCount: 0,
@@ -346,7 +349,7 @@ class _PostWritePageState extends ConsumerState<PostWritePage> {
       comments: [],
     );
 
-    ref.read(postNotifierProvider.notifier).addPost(newPost);
+    await ref.read(postNotifierProvider.notifier).addPost(newPost);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

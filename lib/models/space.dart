@@ -31,37 +31,44 @@ class Space {
 
   factory Space.fromJson(Map<String, dynamic> json) {
     return Space(
-      id: json['id'],
-      branchId: json['branchId'],
-      name: json['name'],
-      description: json['description'],
-      capacity: json['capacity'],
-      pricePerHour: json['pricePerHour'],
-      amenities: List<String>.from(json['amenities']),
-      images: List<String>.from(json['images']),
-      isAvailable: json['isAvailable'],
-      category: json['category'],
-      operatingHours: Map<String, dynamic>.from(json['operatingHours']),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id']?.toString() ?? '',
+      branchId: json['branch_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      capacity: json['capacity'] ?? 0,
+      pricePerHour: json['price_per_hour'] ?? 0,
+      amenities:
+          json['amenities'] != null ? List<String>.from(json['amenities']) : [],
+      images: json['images'] != null ? List<String>.from(json['images']) : [],
+      isAvailable: json['is_available'] ?? true,
+      category: json['category']?.toString() ?? '',
+      operatingHours: json['operating_hours'] != null
+          ? Map<String, dynamic>.from(json['operating_hours'])
+          : {},
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'].toString())
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'branchId': branchId,
+      'branch_id': branchId,
       'name': name,
       'description': description,
       'capacity': capacity,
-      'pricePerHour': pricePerHour,
+      'price_per_hour': pricePerHour,
       'amenities': amenities,
       'images': images,
-      'isAvailable': isAvailable,
+      'is_available': isAvailable,
       'category': category,
-      'operatingHours': operatingHours,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'operating_hours': operatingHours,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

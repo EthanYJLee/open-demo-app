@@ -6,12 +6,12 @@ part of 'community_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$postNotifierHash() => r'be068c9a5b2f5e9e22cb7ee1cb82229f8d85149f';
+String _$postNotifierHash() => r'4e8d20a740dc1df6617ff29953f92f41dd00de02';
 
 /// See also [PostNotifier].
 @ProviderFor(PostNotifier)
 final postNotifierProvider =
-    AutoDisposeNotifierProvider<PostNotifier, List<Post>>.internal(
+    AutoDisposeAsyncNotifierProvider<PostNotifier, List<Post>>.internal(
   PostNotifier.new,
   name: r'postNotifierProvider',
   debugGetCreateSourceHash:
@@ -20,13 +20,13 @@ final postNotifierProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$PostNotifier = AutoDisposeNotifier<List<Post>>;
-String _$commentNotifierHash() => r'5f75a9e648d08da978d7977ee85b5e0e38349226';
+typedef _$PostNotifier = AutoDisposeAsyncNotifier<List<Post>>;
+String _$commentNotifierHash() => r'8481c695d2a9a0aa7cb428485adeaa081c12bec6';
 
 /// See also [CommentNotifier].
 @ProviderFor(CommentNotifier)
 final commentNotifierProvider =
-    AutoDisposeNotifierProvider<CommentNotifier, List<Comment>>.internal(
+    AutoDisposeAsyncNotifierProvider<CommentNotifier, List<Comment>>.internal(
   CommentNotifier.new,
   name: r'commentNotifierProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -36,14 +36,14 @@ final commentNotifierProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$CommentNotifier = AutoDisposeNotifier<List<Comment>>;
+typedef _$CommentNotifier = AutoDisposeAsyncNotifier<List<Comment>>;
 String _$selectedPostNotifierHash() =>
-    r'e1c8cac4604ec42aca15af60708305db832be638';
+    r'b77a717df6bfb1cc9b8d0ff31fa36451ba94295a';
 
 /// See also [SelectedPostNotifier].
 @ProviderFor(SelectedPostNotifier)
 final selectedPostNotifierProvider =
-    AutoDisposeNotifierProvider<SelectedPostNotifier, Post?>.internal(
+    AutoDisposeAsyncNotifierProvider<SelectedPostNotifier, Post?>.internal(
   SelectedPostNotifier.new,
   name: r'selectedPostNotifierProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -53,6 +53,6 @@ final selectedPostNotifierProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$SelectedPostNotifier = AutoDisposeNotifier<Post?>;
+typedef _$SelectedPostNotifier = AutoDisposeAsyncNotifier<Post?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

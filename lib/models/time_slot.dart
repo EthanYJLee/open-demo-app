@@ -11,9 +11,9 @@ class TimeSlot {
 
   factory TimeSlot.fromJson(Map<String, dynamic> json) {
     return TimeSlot(
-      id: json['id'],
-      time: json['time'],
-      isAvailable: json['isAvailable'],
+      id: json['id']?.toString() ?? '',
+      time: json['time']?.toString() ?? '',
+      isAvailable: json['is_available'] ?? true,
     );
   }
 
@@ -21,7 +21,7 @@ class TimeSlot {
     return {
       'id': id,
       'time': time,
-      'isAvailable': isAvailable,
+      'is_available': isAvailable,
     };
   }
 }

@@ -44,3 +44,5 @@ app.*.map.json
 
 .cursor/
 .gemini/
+
+*.env

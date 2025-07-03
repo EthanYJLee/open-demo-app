@@ -6,6 +6,7 @@ import '../../constants/app_colors.dart';
 import '../../providers/reservation_provider.dart';
 import '../../providers/branch_provider.dart';
 import '../../models/reservation.dart';
+import '../../models/space.dart';
 import '../../widgets/branch_selector.dart';
 
 class ReservationListPage extends ConsumerStatefulWidget {
@@ -35,20 +36,8 @@ class _ReservationListPageState extends ConsumerState<ReservationListPage>
   @override
   Widget build(BuildContext context) {
     final selectedBranch = ref.watch(selectedBranchProvider);
-    final spaces = ref.watch(spacesProvider);
-    final reservations = ref.watch(reservationsProvider);
-
-    // 선택된 지점의 공간들만 필터링
-    final filteredSpaces = selectedBranch != null
-        ? spaces.where((space) => space.branchId == selectedBranch.id).toList()
-        : spaces;
-
-    // 선택된 지점의 예약들만 필터링
-    final filteredReservations = selectedBranch != null
-        ? reservations
-            .where((reservation) => reservation.branchId == selectedBranch.id)
-            .toList()
-        : reservations;
+    final spacesAsync = ref.watch(spacesProvider);
+    final reservationsAsync = ref.watch(reservationsProvider);
 
     return Container(
       decoration: const BoxDecoration(
@@ -90,8 +79,38 @@ class _ReservationListPageState extends ConsumerState<ReservationListPage>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildAvailableSpaces(filteredSpaces),
-                  _buildMyReservations(filteredReservations),
+                  spacesAsync.when(
+                    data: (spaces) {
+                      // 선택된 지점의 공간들만 필터링
+                      final filteredSpaces = selectedBranch != null
+                          ? spaces
+                              .where((space) =>
+                                  space.branchId == selectedBranch.id)
+                              .toList()
+                          : spaces;
+                      return _buildAvailableSpaces(filteredSpaces);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) =>
+                        Center(child: Text('Error: $error')),
+                  ),
+                  reservationsAsync.when(
+                    data: (reservations) {
+                      // 선택된 지점의 예약들만 필터링
+                      final filteredReservations = selectedBranch != null
+                          ? reservations
+                              .where((reservation) =>
+                                  reservation.branchId == selectedBranch.id)
+                              .toList()
+                          : reservations;
+                      return _buildMyReservations(filteredReservations);
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) =>
+                        Center(child: Text('Error: $error')),
+                  ),
                 ],
               ),
             ),
@@ -248,256 +267,289 @@ class _ReservationListPageState extends ConsumerState<ReservationListPage>
   }
 
   Widget _buildMyReservations(List<Reservation> reservations) {
-    if (reservations.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.textSecondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.event_busy,
-                size: 64,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              '예약 내역이 없습니다',
-              style: AppTextStyles.h4.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '새로운 예약을 만들어보세요',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
+    final spacesAsync = ref.watch(spacesProvider);
+
+    return spacesAsync.when(
+      data: (spaces) {
+        if (reservations.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => Get.toNamed('/reservation/form'),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.add, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          '예약하기',
-                          style: AppTextStyles.buttonMedium,
+                  child: Icon(
+                    Icons.event_busy,
+                    size: 64,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  '예약 내역이 없습니다',
+                  style: AppTextStyles.h4.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '새로운 예약을 만들어보세요',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Get.toNamed('/reservation/form'),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              '예약하기',
+                              style: AppTextStyles.buttonMedium,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: reservations.length,
-      itemBuilder: (context, index) {
-        final reservation = reservations[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.cardShadow,
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+        return ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: reservations.length,
+          itemBuilder: (context, index) {
+            final reservation = reservations[index];
+            final space = spaces.firstWhere(
+              (s) => s.id == reservation.spaceId,
+              orElse: () => Space(
+                id: '',
+                branchId: '',
+                name: '알 수 없는 공간',
+                description: '',
+                capacity: 0,
+                pricePerHour: 0,
+                amenities: [],
+                images: [],
+                isAvailable: false,
+                category: '',
+                operatingHours: {},
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            );
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.cardShadow,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(reservation.status)
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        _getStatusIcon(reservation.status),
-                        color: _getStatusColor(reservation.status),
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            reservation.spaceName,
-                            style: AppTextStyles.cardTitle,
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(reservation.status)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_formatDate(reservation.date)} • ${reservation.timeSlot}',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
+                          child: Icon(
+                            _getStatusIcon(reservation.status),
+                            color: _getStatusColor(reservation.status),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                space.name,
+                                style: AppTextStyles.cardTitle,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_formatDate(reservation.date)} • ${reservation.timeSlot}',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(reservation.status)
+                                .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            reservation.status.displayName,
+                            style: AppTextStyles.caption.copyWith(
+                              color: _getStatusColor(reservation.status),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (reservation.status == ReservationStatus.reserved) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    ref
+                                        .read(reservationNotifierProvider
+                                            .notifier)
+                                        .completeReservation(reservation.id);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          size: 16,
+                                          color: AppColors.success,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '입실 완료',
+                                          style:
+                                              AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.success,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    ref
+                                        .read(reservationNotifierProvider
+                                            .notifier)
+                                        .cancelReservation(reservation.id);
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.cancel,
+                                          size: 16,
+                                          color: AppColors.error,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '예약 취소',
+                                          style:
+                                              AppTextStyles.bodySmall.copyWith(
+                                            color: AppColors.error,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(reservation.status)
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        reservation.status.displayName,
-                        style: AppTextStyles.caption.copyWith(
-                          color: _getStatusColor(reservation.status),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
-                if (reservation.status == ReservationStatus.reserved) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                ref
-                                    .read(reservationNotifierProvider.notifier)
-                                    .completeReservation(reservation.id);
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      size: 16,
-                                      color: AppColors.success,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '입실 완료',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.success,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                ref
-                                    .read(reservationNotifierProvider.notifier)
-                                    .cancelReservation(reservation.id);
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.cancel,
-                                      size: 16,
-                                      color: AppColors.error,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '예약 취소',
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.error,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 

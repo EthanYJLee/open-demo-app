@@ -10,11 +10,8 @@ enum ReservationStatus {
 class Reservation {
   final String id;
   final String userId;
-  final String userName;
   final String branchId;
-  final String branchName;
   final String spaceId;
-  final String spaceName;
   final DateTime date;
   final String timeSlot;
   final int duration; // 분 단위
@@ -28,11 +25,8 @@ class Reservation {
   Reservation({
     required this.id,
     required this.userId,
-    required this.userName,
     required this.branchId,
-    required this.branchName,
     required this.spaceId,
-    required this.spaceName,
     required this.date,
     required this.timeSlot,
     required this.duration,
@@ -46,45 +40,48 @@ class Reservation {
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
     return Reservation(
-      id: json['id'],
-      userId: json['userId'],
-      userName: json['userName'],
-      branchId: json['branchId'],
-      branchName: json['branchName'],
-      spaceId: json['spaceId'],
-      spaceName: json['spaceName'],
-      date: DateTime.parse(json['date']),
-      timeSlot: json['timeSlot'],
-      duration: json['duration'],
-      price: json['price'],
-      discountedPrice: json['discountedPrice'],
-      status: ReservationStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-      ),
-      notes: json['notes'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      branchId: json['branch_id']?.toString() ?? '',
+      spaceId: json['space_id']?.toString() ?? '',
+      date: json['date'] != null
+          ? DateTime.parse(json['date'].toString())
+          : DateTime.now(),
+      timeSlot: json['time_slot']?.toString() ?? '',
+      duration: json['duration'] ?? 0,
+      price: json['price'] ?? 0,
+      discountedPrice: json['discounted_price'] ?? 0,
+      status: json['status'] != null
+          ? ReservationStatus.values.firstWhere(
+              (e) => e.name == json['status'],
+              orElse: () => ReservationStatus.reserved,
+            )
+          : ReservationStatus.reserved,
+      notes: json['notes']?.toString(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'].toString())
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'userId': userId,
-      'userName': userName,
-      'branchId': branchId,
-      'branchName': branchName,
-      'spaceId': spaceId,
-      'spaceName': spaceName,
+      'user_id': userId,
+      'branch_id': branchId,
+      'space_id': spaceId,
       'date': date.toIso8601String(),
-      'timeSlot': timeSlot,
+      'time_slot': timeSlot,
       'duration': duration,
       'price': price,
-      'discountedPrice': discountedPrice,
+      'discounted_price': discountedPrice,
       'status': status.name,
       'notes': notes,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

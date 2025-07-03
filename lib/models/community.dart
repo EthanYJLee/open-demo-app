@@ -5,7 +5,6 @@ class Post {
   final String authorId;
   final String authorName;
   final String? branchId;
-  final String? branchName;
   final int viewCount;
   final int commentCount;
   final List<Comment> comments;
@@ -19,7 +18,6 @@ class Post {
     required this.authorId,
     required this.authorName,
     this.branchId,
-    this.branchName,
     required this.viewCount,
     required this.commentCount,
     required this.comments,
@@ -29,20 +27,24 @@ class Post {
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json['id'],
-      title: json['title'],
-      content: json['content'],
-      authorId: json['authorId'],
-      authorName: json['authorName'],
-      branchId: json['branchId'],
-      branchName: json['branchName'],
-      viewCount: json['viewCount'],
-      commentCount: json['commentCount'],
-      comments: (json['comments'] as List)
-          .map((comment) => Comment.fromJson(comment))
-          .toList(),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      authorId: json['author_id']?.toString() ?? '',
+      authorName: json['author_name']?.toString() ?? '',
+      branchId: json['branch_id']?.toString(),
+      viewCount: json['view_count'] ?? 0,
+      commentCount: json['comment_count'] ?? 0,
+      comments: (json['comments'] as List?)
+              ?.map((comment) => Comment.fromJson(comment))
+              .toList() ??
+          [],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'].toString())
+          : DateTime.now(),
     );
   }
 
@@ -51,15 +53,14 @@ class Post {
       'id': id,
       'title': title,
       'content': content,
-      'authorId': authorId,
-      'authorName': authorName,
-      'branchId': branchId,
-      'branchName': branchName,
-      'viewCount': viewCount,
-      'commentCount': commentCount,
+      'author_id': authorId,
+      'author_name': authorName,
+      'branch_id': branchId,
+      'view_count': viewCount,
+      'comment_count': commentCount,
       'comments': comments.map((comment) => comment.toJson()).toList(),
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -70,7 +71,6 @@ class Post {
     String? authorId,
     String? authorName,
     String? branchId,
-    String? branchName,
     int? viewCount,
     int? commentCount,
     List<Comment>? comments,
@@ -84,7 +84,6 @@ class Post {
       authorId: authorId ?? this.authorId,
       authorName: authorName ?? this.authorName,
       branchId: branchId ?? this.branchId,
-      branchName: branchName ?? this.branchName,
       viewCount: viewCount ?? this.viewCount,
       commentCount: commentCount ?? this.commentCount,
       comments: comments ?? this.comments,
@@ -115,25 +114,29 @@ class Comment {
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: json['id'],
-      postId: json['postId'],
-      authorId: json['authorId'],
-      authorName: json['authorName'],
-      content: json['content'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id']?.toString() ?? '',
+      postId: json['post_id']?.toString() ?? '',
+      authorId: json['author_id']?.toString() ?? '',
+      authorName: json['author_name']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'].toString())
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'postId': postId,
-      'authorId': authorId,
-      'authorName': authorName,
+      'post_id': postId,
+      'author_id': authorId,
+      'author_name': authorName,
       'content': content,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

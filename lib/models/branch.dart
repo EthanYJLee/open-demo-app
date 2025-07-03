@@ -12,6 +12,8 @@ class Branch {
   final bool isActive;
   final String managerName;
   final String managerPhone;
+  final String? city;
+  final String? district;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,27 +31,38 @@ class Branch {
     required this.isActive,
     required this.managerName,
     required this.managerPhone,
+    this.city,
+    this.district,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory Branch.fromJson(Map<String, dynamic> json) {
     return Branch(
-      id: json['id'],
-      name: json['name'],
-      address: json['address'],
-      phone: json['phone'],
-      description: json['description'],
-      latitude: json['latitude'].toDouble(),
-      longitude: json['longitude'].toDouble(),
-      images: List<String>.from(json['images']),
-      amenities: List<String>.from(json['amenities']),
-      operatingHours: Map<String, dynamic>.from(json['operatingHours']),
-      isActive: json['isActive'],
-      managerName: json['managerName'],
-      managerPhone: json['managerPhone'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      latitude: (json['latitude'] ?? 0.0).toDouble(),
+      longitude: (json['longitude'] ?? 0.0).toDouble(),
+      images: json['images'] != null ? List<String>.from(json['images']) : [],
+      amenities:
+          json['amenities'] != null ? List<String>.from(json['amenities']) : [],
+      operatingHours: json['operating_hours'] != null
+          ? Map<String, dynamic>.from(json['operating_hours'])
+          : {},
+      isActive: json['is_active'] ?? true,
+      managerName: json['manager_name']?.toString() ?? '',
+      managerPhone: json['manager_phone']?.toString() ?? '',
+      city: json['city']?.toString(),
+      district: json['district']?.toString(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'].toString())
+          : DateTime.now(),
     );
   }
 
@@ -64,12 +77,14 @@ class Branch {
       'longitude': longitude,
       'images': images,
       'amenities': amenities,
-      'operatingHours': operatingHours,
-      'isActive': isActive,
-      'managerName': managerName,
-      'managerPhone': managerPhone,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'operating_hours': operatingHours,
+      'is_active': isActive,
+      'manager_name': managerName,
+      'manager_phone': managerPhone,
+      'city': city,
+      'district': district,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

@@ -126,6 +126,20 @@ Generate code, corrections, and refactorings that comply with the basic principl
 - Break down large widgets into smaller, focused widgets
 - Utilize const constructors wherever possible to reduce rebuilds
 
+### Responsive Design Principles
+
+- 모든 기기에 대응하는 반응형 디자인을 구현하라
+- MediaQuery를 사용하여 화면 크기와 방향을 감지하라
+- LayoutBuilder를 활용하여 동적 레이아웃을 구성하라
+- Flexible과 Expanded 위젯을 적절히 사용하여 유연한 레이아웃을 만들라
+- 화면 크기에 따라 다른 위젯을 표시하려면 LayoutBuilder와 조건부 렌더링을 사용하라
+- 패딩과 마진을 화면 크기에 비례하여 설정하라 (MediaQuery.of(context).size.width * 0.05)
+- 텍스트 크기를 화면 크기에 맞게 조정하라 (MediaQuery.of(context).size.width * 0.04)
+- 그리드 시스템을 사용하여 다양한 화면 크기에 대응하라
+- 작은 화면에서는 단일 컬럼, 큰 화면에서는 다중 컬럼 레이아웃을 사용하라
+- 터치 타겟 크기를 최소 48x48dp로 유지하라
+- 스크롤 가능한 레이아웃을 사용하여 콘텐츠가 화면을 넘어가지 않도록 하라
+
 ### Testing
 
 - Use the standard widget testing for flutter

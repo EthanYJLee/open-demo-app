@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_colors.dart';
 import '../../providers/community_provider.dart';
 import '../../models/community.dart';
-import '../../utils/fake_data.dart';
+import '../../providers/profile_provider.dart';
 
 class PostDetailPage extends ConsumerStatefulWidget {
   const PostDetailPage({super.key});
@@ -15,6 +16,36 @@ class PostDetailPage extends ConsumerStatefulWidget {
 
 class _PostDetailPageState extends ConsumerState<PostDetailPage> {
   final TextEditingController _commentController = TextEditingController();
+  Post? selectedPost;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPost();
+  }
+
+  void _loadPost() async {
+    String? postId;
+    final arguments = Get.arguments;
+
+    if (arguments is Map<String, dynamic>) {
+      postId = arguments['postId'] as String?;
+    } else if (arguments is String) {
+      postId = arguments;
+    }
+
+    if (postId != null) {
+      final post =
+          await ref.read(postNotifierProvider.notifier).getPostById(postId);
+      if (post != null) {
+        setState(() {
+          selectedPost = post;
+        });
+        // 조회수 증가
+        ref.read(postNotifierProvider.notifier).incrementViewCount(postId);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -24,8 +55,6 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedPost = ref.watch(selectedPostNotifierProvider);
-
     if (selectedPost == null) {
       return Scaffold(
         appBar: AppBar(
@@ -34,17 +63,10 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           foregroundColor: Colors.white,
         ),
         body: const Center(
-          child: Text('게시글을 찾을 수 없습니다.'),
+          child: CircularProgressIndicator(),
         ),
       );
     }
-
-    // 조회수 증가
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(postNotifierProvider.notifier)
-          .incrementViewCount(selectedPost.id);
-    });
 
     return Scaffold(
       appBar: AppBar(
@@ -62,7 +84,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 children: [
                   // 게시글 제목
                   Text(
-                    selectedPost.title,
+                    selectedPost!.title,
                     style: AppTextStyles.h2,
                   ),
                   const SizedBox(height: 16),
@@ -74,7 +96,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                         radius: 16,
                         backgroundColor: AppColors.primary,
                         child: Text(
-                          selectedPost.authorName[0],
+                          selectedPost!.authorName.isNotEmpty
+                              ? selectedPost!.authorName[0]
+                              : '?',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -84,12 +108,14 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        selectedPost.authorName,
+                        selectedPost!.authorName.isNotEmpty
+                            ? selectedPost!.authorName
+                            : '알 수 없음',
                         style: AppTextStyles.bodyMedium,
                       ),
                       const Spacer(),
                       Text(
-                        _formatDate(selectedPost.createdAt),
+                        _formatDate(selectedPost!.createdAt),
                         style: AppTextStyles.caption,
                       ),
                     ],
@@ -106,7 +132,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${selectedPost.viewCount}',
+                        '${selectedPost!.viewCount}',
                         style: AppTextStyles.caption,
                       ),
                       const SizedBox(width: 16),
@@ -117,7 +143,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${selectedPost.commentCount}',
+                        '${selectedPost!.commentCount}',
                         style: AppTextStyles.caption,
                       ),
                     ],
@@ -126,42 +152,64 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
                   // 게시글 내용
                   Text(
-                    selectedPost.content,
+                    selectedPost!.content,
                     style: AppTextStyles.bodyLarge,
                   ),
                   const SizedBox(height: 24),
 
                   // 댓글 섹션
-                  Text(
-                    '댓글 (${selectedPost.comments.length})',
-                    style: AppTextStyles.h4,
-                  ),
-                  const SizedBox(height: 16),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final commentsAsync = ref.watch(commentNotifierProvider);
+                      return commentsAsync.when(
+                        data: (comments) {
+                          final postComments = comments
+                              .where((comment) =>
+                                  comment.postId == selectedPost!.id)
+                              .toList();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '댓글 (${postComments.length})',
+                                style: AppTextStyles.h4,
+                              ),
+                              const SizedBox(height: 16),
 
-                  // 댓글 목록
-                  if (selectedPost.comments.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.comment_outlined,
-                              size: 48,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '첫 번째 댓글을 남겨보세요!',
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    ...selectedPost.comments
-                        .map((comment) => _buildComment(comment)),
+                              // 댓글 목록
+                              if (postComments.isEmpty)
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.comment_outlined,
+                                          size: 48,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          '첫 번째 댓글을 남겨보세요!',
+                                          style: AppTextStyles.bodyMedium,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              else
+                                ...postComments
+                                    .map((comment) => _buildComment(comment)),
+                            ],
+                          );
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) =>
+                            Center(child: Text('Error: $error')),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -198,7 +246,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: _addComment,
+                  onPressed: () => _addComment(selectedPost!.id),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -231,7 +279,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 radius: 12,
                 backgroundColor: AppColors.secondary,
                 child: Text(
-                  comment.authorName[0],
+                  comment.authorName.isNotEmpty ? comment.authorName[0] : '?',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -263,25 +311,25 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     );
   }
 
-  void _addComment() {
+  void _addComment(String postId) async {
     if (_commentController.text.trim().isEmpty) return;
 
-    final selectedPost = ref.read(selectedPostNotifierProvider);
-    if (selectedPost == null) return;
+    final profile = await ref.read(currentProfileProvider.future);
+    if (profile == null) return; // 로그인된 사용자 없으면 댓글 작성 불가
 
     final newComment = Comment(
-      id: FakeData.generateId(),
+      id: '${DateTime.now().millisecondsSinceEpoch}', // 임시 ID, Supabase에서 자동 생성될 것임
       content: _commentController.text.trim(),
-      authorId: FakeData.currentUser.id,
-      authorName: FakeData.currentUser.name,
+      authorId: profile.id,
+      authorName: profile.name,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      postId: selectedPost.id,
+      postId: postId,
     );
 
-    ref
+    await ref
         .read(postNotifierProvider.notifier)
-        .addComment(selectedPost.id, newComment);
+        .addComment(postId, newComment);
     _commentController.clear();
   }
 

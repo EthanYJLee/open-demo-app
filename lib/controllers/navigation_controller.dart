@@ -6,18 +6,19 @@ class NavigationController extends GetxController {
 
   void changeIndex(int index) {
     if (isTransitioning.value || selectedIndex.value == index) return;
+    selectedIndex.value = index;
+    isTransitioning.value = false;
 
-    isTransitioning.value = true;
+    // isTransitioning.value = true;
+    // // 부드러운 전환을 위한 지연
+    // Future.delayed(const Duration(milliseconds: 100), () {
+    //   selectedIndex.value = index;
 
-    // 부드러운 전환을 위한 지연
-    Future.delayed(const Duration(milliseconds: 100), () {
-      selectedIndex.value = index;
-
-      // 전환 완료 후 상태 초기화
-      Future.delayed(const Duration(milliseconds: 300), () {
-        isTransitioning.value = false;
-      });
-    });
+    //   // 전환 완료 후 상태 초기화
+    //   Future.delayed(const Duration(milliseconds: 300), () {
+    //     isTransitioning.value = false;
+    //   });
+    // });
   }
 
   void goToHome() {

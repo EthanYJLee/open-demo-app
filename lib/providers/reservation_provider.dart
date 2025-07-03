@@ -1,90 +1,119 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/reservation.dart';
 import '../models/space.dart';
 import '../models/time_slot.dart';
-import '../utils/fake_data.dart';
+import '../services/repositories/repository_providers.dart';
 
 part 'reservation_provider.g.dart';
 
 @riverpod
 class ReservationNotifier extends _$ReservationNotifier {
   @override
-  List<Reservation> build() {
-    return FakeData.reservations;
+  Future<List<Reservation>> build() async {
+    final repository = ref.read(reservationRepositoryProvider);
+    return await repository.getAll();
   }
 
-  void addReservation(Reservation reservation) {
-    state = [...state, reservation];
+  Future<void> addReservation(Reservation reservation) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    await repository.create(reservation);
+    ref.invalidateSelf();
   }
 
-  void updateReservationStatus(String reservationId, ReservationStatus status) {
-    state = state.map((reservation) {
-      if (reservation.id == reservationId) {
-        return Reservation(
-          id: reservation.id,
-          userId: reservation.userId,
-          userName: reservation.userName,
-          branchId: reservation.branchId,
-          branchName: reservation.branchName,
-          spaceId: reservation.spaceId,
-          spaceName: reservation.spaceName,
-          date: reservation.date,
-          timeSlot: reservation.timeSlot,
-          duration: reservation.duration,
-          price: reservation.price,
-          discountedPrice: reservation.discountedPrice,
-          status: status,
-          notes: reservation.notes,
-          createdAt: reservation.createdAt,
-          updatedAt: DateTime.now(),
-        );
-      }
-      return reservation;
-    }).toList();
+  Future<void> updateReservationStatus(
+      String reservationId, ReservationStatus status) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    await repository.updateStatus(reservationId, status);
+    ref.invalidateSelf();
   }
 
-  void cancelReservation(String reservationId) {
-    updateReservationStatus(reservationId, ReservationStatus.cancelled);
+  Future<void> cancelReservation(String reservationId) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    await repository.cancelReservation(reservationId);
+    ref.invalidateSelf();
   }
 
-  void completeReservation(String reservationId) {
-    updateReservationStatus(reservationId, ReservationStatus.completed);
+  Future<void> completeReservation(String reservationId) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    await repository.completeReservation(reservationId);
+    ref.invalidateSelf();
+  }
+
+  // 도메인별 특화 메서드들
+  Future<List<Reservation>> getByUserId(String userId) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    return await repository.getByUserId(userId);
+  }
+
+  Future<List<Reservation>> getByBranchId(String branchId) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    return await repository.getByBranchId(branchId);
+  }
+
+  Future<List<Reservation>> getByDate(DateTime date) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    return await repository.getByDate(date);
   }
 }
 
 @riverpod
 class SpaceNotifier extends _$SpaceNotifier {
   @override
-  List<Space> build() {
-    return FakeData.spaces;
+  Future<List<Space>> build() async {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getAll();
   }
 
-  List<Space> getAvailableSpaces() {
-    return state.where((space) => space.isAvailable).toList();
+  Future<List<Space>> getAvailableSpaces() async {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getAvailableSpaces();
   }
 
-  Space? getSpaceById(String id) {
-    try {
-      return state.firstWhere((space) => space.id == id);
-    } catch (e) {
-      return null;
-    }
+  Future<Space?> getSpaceById(String id) async {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getById(id);
+  }
+
+  Future<List<Space>> getByBranchId(String branchId) async {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getByBranchId(branchId);
+  }
+
+  Future<List<Space>> getByCategory(String category) async {
+    final repository = ref.read(spaceRepositoryProvider);
+    return await repository.getByCategory(category);
+  }
+
+  Future<void> updateAvailability(String spaceId, bool isAvailable) async {
+    final repository = ref.read(spaceRepositoryProvider);
+    await repository.updateAvailability(spaceId, isAvailable);
+    ref.invalidateSelf();
   }
 }
 
 @riverpod
 class TimeSlotNotifier extends _$TimeSlotNotifier {
   @override
-  List<TimeSlot> build() {
-    return FakeData.timeSlots;
+  Future<List<TimeSlot>> build() async {
+    // TimeSlot은 현재 하드코딩된 데이터를 사용하므로 그대로 유지
+    return [
+      TimeSlot(id: 'time_1', time: '06:00-08:00', isAvailable: true),
+      TimeSlot(id: 'time_2', time: '08:00-10:00', isAvailable: true),
+      TimeSlot(id: 'time_3', time: '10:00-12:00', isAvailable: false),
+      TimeSlot(id: 'time_4', time: '12:00-14:00', isAvailable: true),
+      TimeSlot(id: 'time_5', time: '14:00-16:00', isAvailable: true),
+      TimeSlot(id: 'time_6', time: '16:00-18:00', isAvailable: false),
+      TimeSlot(id: 'time_7', time: '18:00-20:00', isAvailable: true),
+      TimeSlot(id: 'time_8', time: '20:00-22:00', isAvailable: true),
+    ];
   }
 
-  List<TimeSlot> getAvailableTimeSlots() {
-    return state.where((slot) => slot.isAvailable).toList();
+  Future<List<TimeSlot>> getAvailableTimeSlots() async {
+    final timeSlots = await future;
+    return timeSlots.where((slot) => slot.isAvailable).toList();
   }
 
-  List<TimeSlot> getTimeSlotsForDate(DateTime date) {
+  Future<List<TimeSlot>> getTimeSlotsForDate(DateTime date) async {
     // 실제 구현에서는 해당 날짜의 예약 현황을 확인하여
     // 예약 가능한 시간대만 반환해야 합니다.
     return getAvailableTimeSlots();
@@ -114,31 +143,47 @@ class SelectedDateNotifier extends _$SelectedDateNotifier {
 @riverpod
 class SelectedSpaceNotifier extends _$SelectedSpaceNotifier {
   @override
-  Space? build() {
+  Future<Space?> build() async {
     return null;
   }
 
   void setSpace(Space space) {
-    state = space;
+    state = AsyncValue.data(space);
   }
 
   void clearSelection() {
-    state = null;
+    state = const AsyncValue.data(null);
   }
 }
 
 @riverpod
 class SelectedTimeSlotNotifier extends _$SelectedTimeSlotNotifier {
   @override
-  TimeSlot? build() {
+  Future<TimeSlot?> build() async {
     return null;
   }
 
   void setTimeSlot(TimeSlot timeSlot) {
-    state = timeSlot;
+    state = AsyncValue.data(timeSlot);
   }
 
   void clearSelection() {
-    state = null;
+    state = const AsyncValue.data(null);
+  }
+}
+
+@riverpod
+class UserTodayReservationsNotifier extends _$UserTodayReservationsNotifier {
+  @override
+  Future<List<Reservation>> build(String userId) async {
+    final repository = ref.read(reservationRepositoryProvider);
+    final userReservations = await repository.getByUserId(userId);
+
+    final today = DateTime.now();
+    return userReservations.where((r) {
+      return r.date.year == today.year &&
+          r.date.month == today.month &&
+          r.date.day == today.day;
+    }).toList();
   }
 }

@@ -1,109 +1,127 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/community.dart';
-import '../utils/fake_data.dart';
+import '../services/repositories/repository_providers.dart';
 
 part 'community_provider.g.dart';
 
 @riverpod
 class PostNotifier extends _$PostNotifier {
   @override
-  List<Post> build() {
-    return FakeData.posts;
+  Future<List<Post>> build() async {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getAll();
   }
 
-  void addPost(Post post) {
-    state = [post, ...state];
+  Future<void> addPost(Post post) async {
+    final repository = ref.read(postRepositoryProvider);
+    await repository.create(post);
+    ref.invalidateSelf();
   }
 
-  void updatePost(Post updatedPost) {
-    state = state.map((post) {
-      if (post.id == updatedPost.id) {
-        return updatedPost;
-      }
-      return post;
-    }).toList();
+  Future<void> updatePost(Post updatedPost) async {
+    final repository = ref.read(postRepositoryProvider);
+    await repository.update(updatedPost);
+    ref.invalidateSelf();
   }
 
-  void deletePost(String postId) {
-    state = state.where((post) => post.id != postId).toList();
+  Future<void> deletePost(String postId) async {
+    final repository = ref.read(postRepositoryProvider);
+    await repository.delete(postId);
+    ref.invalidateSelf();
   }
 
-  Post? getPostById(String postId) {
-    try {
-      return state.firstWhere((post) => post.id == postId);
-    } catch (e) {
-      return null;
-    }
+  Future<void> addComment(String postId, Comment comment) async {
+    final commentRepository = ref.read(commentRepositoryProvider);
+    await commentRepository.create(comment);
+
+    // 댓글 수 업데이트
+    final postRepository = ref.read(postRepositoryProvider);
+    final comments = await commentRepository.getByPostId(postId);
+    await postRepository.updateCommentCount(postId, comments.length);
+
+    ref.invalidateSelf();
   }
 
-  void addComment(String postId, Comment comment) {
-    state = state.map((post) {
-      if (post.id == postId) {
-        return post.copyWith(
-          comments: [...post.comments, comment],
-          commentCount: post.commentCount + 1,
-        );
-      }
-      return post;
-    }).toList();
+  Future<void> deleteComment(String postId, String commentId) async {
+    final commentRepository = ref.read(commentRepositoryProvider);
+    await commentRepository.delete(commentId);
+
+    // 댓글 수 업데이트
+    final postRepository = ref.read(postRepositoryProvider);
+    final comments = await commentRepository.getByPostId(postId);
+    await postRepository.updateCommentCount(postId, comments.length);
+
+    ref.invalidateSelf();
   }
 
-  void deleteComment(String postId, String commentId) {
-    state = state.map((post) {
-      if (post.id == postId) {
-        final updatedComments = post.comments.where((comment) => comment.id != commentId).toList();
-        return post.copyWith(
-          comments: updatedComments,
-          commentCount: updatedComments.length,
-        );
-      }
-      return post;
-    }).toList();
+  Future<void> incrementViewCount(String postId) async {
+    final repository = ref.read(postRepositoryProvider);
+    await repository.incrementViewCount(postId);
+    ref.invalidateSelf();
   }
 
-  void incrementViewCount(String postId) {
-    state = state.map((post) {
-      if (post.id == postId) {
-        return post.copyWith(viewCount: post.viewCount + 1);
-      }
-      return post;
-    }).toList();
+  Future<Post?> getPostById(String postId) async {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getById(postId);
+  }
+
+  // 도메인별 특화 메서드들
+  Future<List<Post>> getByAuthorId(String authorId) async {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getByAuthorId(authorId);
+  }
+
+  Future<List<Post>> getByBranchId(String? branchId) async {
+    final repository = ref.read(postRepositoryProvider);
+    return await repository.getByBranchId(branchId);
   }
 }
 
 @riverpod
 class CommentNotifier extends _$CommentNotifier {
   @override
-  List<Comment> build() {
-    return [];
+  Future<List<Comment>> build() async {
+    final repository = ref.read(commentRepositoryProvider);
+    return await repository.getAll();
   }
 
-  void setComments(List<Comment> comments) {
-    state = comments;
+  Future<void> addComment(Comment comment) async {
+    final repository = ref.read(commentRepositoryProvider);
+    await repository.create(comment);
+    ref.invalidateSelf();
   }
 
-  void addComment(Comment comment) {
-    state = [...state, comment];
+  Future<void> deleteComment(String commentId) async {
+    final repository = ref.read(commentRepositoryProvider);
+    await repository.delete(commentId);
+    ref.invalidateSelf();
   }
 
-  void deleteComment(String commentId) {
-    state = state.where((comment) => comment.id != commentId).toList();
+  Future<List<Comment>> getByPostId(String postId) async {
+    final repository = ref.read(commentRepositoryProvider);
+    return await repository.getByPostId(postId);
+  }
+
+  Future<List<Comment>> getByAuthorId(String authorId) async {
+    final repository = ref.read(commentRepositoryProvider);
+    return await repository.getByAuthorId(authorId);
   }
 }
 
 @riverpod
 class SelectedPostNotifier extends _$SelectedPostNotifier {
   @override
-  Post? build() {
+  Future<Post?> build() async {
     return null;
   }
 
-  void setPost(Post post) {
-    state = post;
+  Future<void> setPost(String postId) async {
+    final repository = ref.read(postRepositoryProvider);
+    final post = await repository.getById(postId);
+    state = AsyncValue.data(post);
   }
 
   void clearSelection() {
-    state = null;
+    state = const AsyncValue.data(null);
   }
-} 
+}
