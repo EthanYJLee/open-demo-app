@@ -6,6 +6,7 @@ import '../providers/address_provider.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 import '../utils/responsive_utils.dart';
+import '../pages/branch_layout_page.dart';
 
 class BranchSelector extends ConsumerWidget {
   const BranchSelector({super.key});
@@ -30,80 +31,129 @@ class BranchSelector extends ConsumerWidget {
       filteredBranchesAsync = const AsyncValue<List<Branch>>.data([]);
     }
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: padding * 1.5,
-        vertical: padding * 0.8,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(padding * 1.5),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: padding * 1.5,
+            vertical: padding * 0.8,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(padding * 1.5),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: padding * 2,
+                offset: Offset(0, padding * 0.5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // 시/도 선택
+              Expanded(
+                child: _buildDropdown(
+                  context,
+                  ref,
+                  '시/도',
+                  selectedCity,
+                  (value) {
+                    ref.read(selectedCityProvider.notifier).state = value;
+                    ref.read(selectedDistrictProvider.notifier).state = null;
+                    ref.read(selectedBranchProvider.notifier).state = null;
+                  },
+                  ref.watch(citiesProvider),
+                  padding,
+                ),
+              ),
+              SizedBox(width: padding * 0.5),
+
+              // 구/군 선택
+              Expanded(
+                child: _buildDropdown(
+                  context,
+                  ref,
+                  '구/군',
+                  selectedDistrict,
+                  (value) {
+                    ref.read(selectedDistrictProvider.notifier).state = value;
+                    ref.read(selectedBranchProvider.notifier).state = null;
+                  },
+                  ref.watch(districtsProvider(selectedCity)),
+                  padding,
+                ),
+              ),
+              SizedBox(width: padding * 0.5),
+
+              // 지점 선택 (DB에서 필터링된 결과 사용)
+              Expanded(
+                child: _buildDropdown(
+                  context,
+                  ref,
+                  '지점',
+                  selectedBranch,
+                  (value) {
+                    ref.read(selectedBranchProvider.notifier).state = value;
+                  },
+                  filteredBranchesAsync,
+                  padding,
+                  isBranch: true,
+                ),
+              ),
+            ],
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: padding * 2,
-            offset: Offset(0, padding * 0.5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // 시/도 선택
-          Expanded(
-            child: _buildDropdown(
-              context,
-              ref,
-              '시/도',
-              selectedCity,
-              (value) {
-                ref.read(selectedCityProvider.notifier).state = value;
-                ref.read(selectedDistrictProvider.notifier).state = null;
-                ref.read(selectedBranchProvider.notifier).state = null;
-              },
-              ref.watch(citiesProvider),
-              padding,
-            ),
-          ),
-          SizedBox(width: padding * 0.5),
 
-          // 구/군 선택
-          Expanded(
-            child: _buildDropdown(
-              context,
-              ref,
-              '구/군',
-              selectedDistrict,
-              (value) {
-                ref.read(selectedDistrictProvider.notifier).state = value;
-                ref.read(selectedBranchProvider.notifier).state = null;
+        // 지점이 선택되었을 때 배치도 보기 버튼 표시
+        if (selectedBranch != null) ...[
+          SizedBox(height: padding * 0.5),
+          Container(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        BranchLayoutPage(branch: selectedBranch),
+                  ),
+                );
               },
-              ref.watch(districtsProvider(selectedCity)),
-              padding,
-            ),
-          ),
-          SizedBox(width: padding * 0.5),
-
-          // 지점 선택 (DB에서 필터링된 결과 사용)
-          Expanded(
-            child: _buildDropdown(
-              context,
-              ref,
-              '지점',
-              selectedBranch,
-              (value) {
-                ref.read(selectedBranchProvider.notifier).state = value;
-              },
-              filteredBranchesAsync,
-              padding,
-              isBranch: true,
+              icon: Icon(
+                Icons.map_outlined,
+                color: Colors.white,
+                size: ResponsiveUtils.getResponsiveIconSize(context) * 0.8,
+              ),
+              label: Text(
+                '배치도 보기',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize:
+                      ResponsiveUtils.getResponsiveFontSize(context, 14.0),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDark,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: padding * 1.5,
+                  vertical: padding * 0.8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(padding * 1.5),
+                ),
+                elevation: 4,
+              ),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 

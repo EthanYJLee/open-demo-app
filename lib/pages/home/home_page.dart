@@ -31,8 +31,8 @@ class HomePage extends ConsumerWidget {
             final todayReservationsAsync =
                 ref.watch(userTodayReservationsNotifierProvider(profile.id));
 
-            return postsAsync.when(
-              data: (posts) {
+                return postsAsync.when(
+                  data: (posts) {
                 return todayReservationsAsync.when(
                   data: (todayReservations) {
                     // 최근 게시글 (최대 3개)

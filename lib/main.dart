@@ -41,7 +41,7 @@ void main() async {
     print('Supabase client available: ${client != null}');
   } catch (e) {
     print('Failed to initialize Supabase: $e');
-    // 초기화 실패시에도 앱은 계속 실행
+    // 초기화 실패시에도 앱 계속 실행
   }
 
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
